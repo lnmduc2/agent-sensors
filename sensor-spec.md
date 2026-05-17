@@ -242,7 +242,7 @@ agent_hints:
 A Sensor lives as a self-contained folder. The folder structure is standardized so any agent or human can understand it without prior context:
 
 ```
-.sensors/
+.agents/sensors/
 ├── pencil-stdout/
 │   ├── sensor.yaml       # manifest — identity, source, sink, agent_hints
 │   └── runner.py         # logic — attach to source, write to sink
