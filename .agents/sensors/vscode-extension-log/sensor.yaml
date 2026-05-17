@@ -1,0 +1,42 @@
+api_version: sensor/v0.1
+name: vscode-extension-log
+version: 1.0.0
+description: Observe the latest VS Code or Cursor Extension Host log and mirror recent lines into a stdout artifact.
+
+runtime:
+  entrypoint: runner.py
+  language: python
+
+source:
+  type: file.tail
+  target: C:/Users/minhduc/AppData/Roaming/Code/logs
+  config:
+    roots:
+      - C:/Users/minhduc/AppData/Roaming/Code/logs
+      - C:/Users/minhduc/AppData/Roaming/Cursor/logs
+    include_patterns:
+      - "*/window*/exthost/exthost.log"
+    scan_interval: 1.0
+    idle_sleep: 0.2
+    start_position: beginning
+
+sink:
+  type: file.ring
+  target: C:/Users/minhduc/Documents/agent-sensors/.agents/sensors/vscode-extension-log/artifacts/stdout
+  config:
+    format: text
+    mirror_to_stdout: true
+    max_lines: 2000
+
+lifecycle:
+  trigger: manual
+  teardown: manual
+
+agent_hints:
+  observe_strategy: >
+    Start the sensor process, then read the artifact file or watch the process stdout.
+    The artifact mirrors the active VS Code or Cursor Extension Host output channel.
+  query_examples:
+    - "Read artifacts/stdout to inspect the most recent Extension Host events"
+    - "Search the artifact for WARN or ERROR lines from Extension Host"
+  freshness_sla: 1s
