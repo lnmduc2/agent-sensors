@@ -1,0 +1,48 @@
+api_version: sensor/v0.1
+name: process-pty
+version: 1.0.0
+description: Spawn a process under a pseudo-terminal and expose recent stdout/stderr as a bounded ring file for agent debugging.
+
+runtime:
+  entrypoint: runner.py
+  language: python
+
+source:
+  type: process.spawn
+  target:
+    cmd: "dotnet run --project src/WebAPI/WebAPI.csproj"
+  config:
+    cwd: /root/ithanv1-api
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://localhost:5001
+      DOTNET_CLI_UI_LANGUAGE: en
+
+sink:
+  type: file.ring
+  target: /root/agent-sensors/.agents/sensors/process-pty/artifacts/stdout.log
+  config:
+    max_lines: 100
+    strip_ansi: true
+    mirror_to_stdout: false
+    status_target: /root/agent-sensors/.agents/sensors/process-pty/artifacts/status.json
+
+lifecycle:
+  trigger: manual
+  teardown: on_process_exit
+
+agent_hints:
+  observe_strategy: >
+    The sensor spawns the configured command itself under a PTY; it does not attach to or mutate an already-running process.
+    Read `artifacts/status.json` first to see whether the child process is running or exited, which PID was spawned, the command/cwd used, the artifact path, and the final exit code.
+    Read `artifacts/stdout.ring` for the latest stdout/stderr lines. This is a bounded ring artifact, so older lines are intentionally discarded after `sink.config.max_lines`.
+    If the ring file is empty while status is `running`, the process may simply not have emitted output yet; re-read after the freshness SLA before assuming failure.
+    For compile/runtime debugging, search the ring file for terms such as `error`, `exception`, `fail`, `warn`, `Now listening on`, and `Application started`.
+    Do not use this sensor for VS Code extension hosts, daemons, or other supervisor-owned processes that are already running; use their native log files instead.
+  query_examples:
+    - "Read artifacts/status.json to check state, pid, command, cwd, artifact_path, and exit_code."
+    - "Read artifacts/stdout.ring to inspect the most recent process output."
+    - "Search artifacts/stdout.ring for ERROR, Exception, fail, warning, or stack traces."
+    - "If debugging server startup, search artifacts/stdout.ring for `Now listening on` or `Application started`."
+    - "If status is exited with non-zero exit_code, read the last 100 lines of artifacts/stdout.ring before proposing a fix."
+  freshness_sla: 1s

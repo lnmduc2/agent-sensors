@@ -107,9 +107,7 @@ Like sinks, sources use a small fixed shape:
 
 | Type | Description | Example `target` | Example `config` |
 |---|---|---|---|
-| `process.stdout` | stdout stream of a running process | `1234` | `{}` |
-| `process.stderr` | stderr stream of a running process | `1234` | `{}` |
-| `process.fd` | arbitrary file descriptor | `1234` | `fd: 5` |
+| `process.spawn` | spawn a command and capture its output without mutating an existing process | `cmd: ["dotnet", "run"]` | `capture: pty`, `streams: [stdout, stderr]`, `cwd: /app`, `env: {...}` |
 | `file.tail` | tail of a file growing on disk | `/var/log/app.log` | `poll_interval: 250ms` |
 | `socket.tcp` | bytes off a TCP socket | `host: localhost, port: 9229` | `{}` |
 | `http.poll` | poll an HTTP endpoint at interval | `https://...` | `interval: 2s` |
@@ -119,6 +117,8 @@ Like sinks, sources use a small fixed shape:
 | `custom` | arbitrary script/binary as source | `./my_source.sh` | `{}` |
 
 Source types are **extensible** — implementors can define new types.
+
+`process.spawn` is the safe default for process output sensors. Sensors should start the process they observe whenever possible, instead of attaching to a supervisor-owned or already-running process and risking changes to its stdio, TTY, session, or IPC state.
 
 ---
 
