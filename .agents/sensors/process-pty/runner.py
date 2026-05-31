@@ -284,7 +284,8 @@ def run(config: SensorConfig) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Spawn a process under a PTY and mirror stdout/stderr into a file.ring artifact")
-    parser.add_argument("--manifest", type=Path, default=Path(__file__).with_name("sensor.yaml"))
+    manifest_default = Path(os.environ.get("SENSOR_CONFIG") or Path(__file__).with_name("sensor.yaml"))
+    parser.add_argument("--manifest", type=Path, default=manifest_default)
     return parser.parse_args()
 
 
